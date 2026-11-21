@@ -5,12 +5,19 @@
 //! The pool's `manager` is the council PDA: a program-derived address with no
 //! private key, so no single operator can ever act alone.
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::{instruction::Instruction, program::invoke_signed};
 
 declare_id!("CT73htzJtWZm27tc3fvcVy1iUrDxBPWv6abkNQidHVvM");
 
 pub const MAX_MEMBERS: usize = 10;
 pub const MAX_VALIDATORS: usize = 10;
 pub const BPS_DENOMINATOR: u16 = 10_000;
+pub const MAX_IX_ACCOUNTS: usize = 16;
+pub const MAX_IX_DATA: usize = 64;
+
+/// The SPL Stake Pool program. Council-signed instructions can only target this program.
+pub const SPL_STAKE_POOL_PROGRAM_ID: Pubkey =
+    pubkey!("SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy");
 
 #[program]
 pub mod stake_council {
@@ -120,31 +127,65 @@ pub mod stake_council {
     /// The council PDA is the pool manager, so this is the only path that can change the pool.
     pub fn execute(ctx: Context<Execute>) -> Result<()> {
         let threshold = ctx.accounts.council.threshold as u32;
+        let creator = ctx.accounts.council.creator;
+        let council_bump = ctx.accounts.council.bump;
         let proposal_key = ctx.accounts.proposal.key();
         let executor = ctx.accounts.executor.key();
 
         let proposal = &mut ctx.accounts.proposal;
-        let pool = &mut ctx.accounts.pool;
-
         require!(!proposal.executed, CouncilError::AlreadyExecuted);
         require!(
             proposal.approvals.count_ones() >= threshold,
             CouncilError::ThresholdNotMet
         );
 
-        match &proposal.action {
+        // Mark executed before any external call.
+        proposal.executed = true;
+        let id = proposal.id;
+        let action = proposal.action.clone();
+
+        match action {
             Action::SetFee { fee_bps } => {
-                pool.epoch_fee_bps = *fee_bps;
+                ctx.accounts.pool.epoch_fee_bps = fee_bps;
             }
             Action::SetStakeDistribution { allocations } => {
-                pool.allocations = allocations.clone();
+                ctx.accounts.pool.allocations = allocations;
+            }
+            Action::StakePoolInstruction { accounts, data } => {
+                // remaining_accounts = [SPL Stake Pool program, ...the proposal's accounts in order]
+                let remaining = ctx.remaining_accounts;
+                require!(
+                    remaining.len() == accounts.len() + 1,
+                    CouncilError::AccountsMismatch
+                );
+                require_keys_eq!(
+                    remaining[0].key(),
+                    SPL_STAKE_POOL_PROGRAM_ID,
+                    CouncilError::NotStakePoolProgram
+                );
+                let mut metas = Vec::with_capacity(accounts.len());
+                for (stored, info) in accounts.iter().zip(remaining[1..].iter()) {
+                    require_keys_eq!(info.key(), stored.pubkey, CouncilError::AccountsMismatch);
+                    metas.push(AccountMeta {
+                        pubkey: stored.pubkey,
+                        is_signer: stored.is_signer,
+                        is_writable: stored.is_writable,
+                    });
+                }
+                let instruction = Instruction {
+                    program_id: SPL_STAKE_POOL_PROGRAM_ID,
+                    accounts: metas,
+                    data,
+                };
+                // The council PDA signs. This is the only way the pool's manager/staker authority is ever used.
+                let signer_seeds: &[&[u8]] = &[b"council", creator.as_ref(), &[council_bump]];
+                invoke_signed(&instruction, remaining, &[signer_seeds])?;
             }
         }
-        proposal.executed = true;
 
         emit!(ProposalExecuted {
             proposal: proposal_key,
-            id: proposal.id,
+            id,
             executor,
         });
         Ok(())
@@ -262,14 +303,31 @@ pub struct Allocation {
 pub enum Action {
     SetFee { fee_bps: u16 },
     SetStakeDistribution { allocations: Vec<Allocation> },
+    /// A manager or staker instruction for the SPL Stake Pool program (set fee, set staker,
+    /// increase / decrease validator stake, ...), executed with the council PDA as signer.
+    StakePoolInstruction { accounts: Vec<IxAccount>, data: Vec<u8> },
+}
+
+/// One account of a stored stake pool instruction.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq, Eq)]
+pub struct IxAccount {
+    pub pubkey: Pubkey,
+    pub is_signer: bool,
+    pub is_writable: bool,
 }
 
 impl Action {
-    /// enum tag + vec length prefix + the largest allocation list
-    pub const MAX_SPACE: usize = 1 + 4 + MAX_VALIDATORS * (32 + 2);
+    /// enum tag + the largest variant: account list (len prefix + 34 bytes each) + data (len prefix + bytes)
+    pub const MAX_SPACE: usize = 1 + 4 + MAX_IX_ACCOUNTS * (32 + 1 + 1) + 4 + MAX_IX_DATA;
 
     pub fn validate(&self) -> Result<()> {
         match self {
+            Action::StakePoolInstruction { accounts, data } => {
+                require!(
+                    accounts.len() <= MAX_IX_ACCOUNTS && !data.is_empty() && data.len() <= MAX_IX_DATA,
+                    CouncilError::InvalidInstruction
+                );
+            }
             Action::SetFee { fee_bps } => {
                 require!(*fee_bps <= BPS_DENOMINATOR, CouncilError::InvalidFee);
             }
@@ -377,4 +435,10 @@ pub enum CouncilError {
     NotPoolManager,
     #[msg("Arithmetic overflow")]
     Overflow,
+    #[msg("Stake pool instruction has too many accounts or an empty / oversized payload")]
+    InvalidInstruction,
+    #[msg("Accounts passed to execute do not match the approved instruction")]
+    AccountsMismatch,
+    #[msg("Council instructions can only target the SPL Stake Pool program")]
+    NotStakePoolProgram,
 }

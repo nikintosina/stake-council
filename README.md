@@ -50,6 +50,7 @@ The rules the program enforces:
 |---|---|---|
 | `SetFee` | Changes the pool fee | Tested |
 | `SetStakeDistribution` | Sets the share of stake each validator should receive | Tested |
+| `StakePoolInstruction` | Runs a manager or staker instruction on the SPL Stake Pool program, signed by the council address: set fee, set staker, increase or decrease a validator's stake | Implemented; test against the real program in progress |
 
 ## Run it
 
