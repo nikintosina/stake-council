@@ -1,3 +1,33 @@
+# stake_council — 2-of-3 council management for stake pools
+
+An Anchor program where stake pool managerial actions (fee changes, stake distribution) need approval from 2 of 3 council wallets. The pool's manager is a program-derived address, so nobody holds a manager key.
+
+- Program: [`programs/stake_council/src/lib.rs`](programs/stake_council/src/lib.rs)
+- Test, 4 passing on a local validator: [`tests/stake_council.ts`](tests/stake_council.ts) — run `pnpm install && anchor test` (Anchor 0.31.1)
+- How it works, what is mocked, and the path to a real SPL stake pool: [STAKE_COUNCIL.md](STAKE_COUNCIL.md)
+
+In this MVP the pool settings live in an account owned by this program, not in the SPL stake pool program.
+
+```
+stake_council: a 2-of-3 council is the only manager of the stake pool
+  ✔ creates the council; the pool manager is a PDA nobody holds a key for
+      alice proposed: fee 500 -> 250 bps (1/3 approvals)
+      rejected as expected: ThresholdNotMet
+      rejected as expected: NotAMember
+      rejected as expected: AlreadyApproved
+      bob approved (2/3 approvals)
+      executed: pool fee is now 250 bps
+      rejected as expected: AlreadyExecuted
+  ✔ fee change: 1 of 3 approvals cannot execute, 2 of 3 can
+      executed: stake split 50% / 30% / 20% across 3 validators
+  ✔ stake distribution: any 2 members can re-weight validators
+  ✔ rejects outsiders and malformed actions at proposal time
+```
+
+---
+
+The rest of this README describes the Claude Code workspace scaffold the project was built in.
+
 # workshop — Claude Code workspace for Solana (Anchor / Kit / Surfpool)
 
 Drop-in `.claude/` + `CLAUDE.md` + `.mcp.json` for an Anchor project. Designed around three ideas:
