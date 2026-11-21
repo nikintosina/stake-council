@@ -22,3 +22,18 @@ test = "TS_NODE_TRANSPILE_ONLY=true pnpm exec ts-mocha -p ./tsconfig.json -t 100
 startup_wait = 10000
 shutdown_wait = 2000
 upgradeable = false
+
+# The real SPL Stake Pool program, dumped from mainnet, for tests/real_stake_pool.ts.
+[[test.genesis]]
+address = "SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy"
+program = "tests/fixtures/spl_stake_pool.so"
+
+# A copy of a mainnet stake pool account with its manager replaced by a test key
+# (see tests/fixtures/make-fixture.js), and that pool's manager fee token account.
+[[test.validator.account]]
+address = "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb"
+filename = "tests/fixtures/stake_pool.json"
+
+[[test.validator.account]]
+address = "8yoigZfzZ1nNaadumY9uPVD118225UYHTDpmjpr2nrSa"
+filename = "tests/fixtures/manager_fee_account.json"
