@@ -95,6 +95,26 @@ The wallet that runs the tests only pays fees. It is not a council member and ca
 - **The pool** is a copy of a mainnet stake pool account. Its manager and staker fields were replaced with a throwaway test key by `tests/fixtures/make-fixture.js`, so the test can play the pool's current operator and hand it over. The unmodified dump is kept next to it.
 - Nothing is sent to mainnet or devnet. The program is not deployed to a public cluster.
 
+## Demo UI
+
+A single page that walks through the council flow in the browser, with no wallet extension.
+
+```
+anchor build
+bash scripts/demo.sh
+```
+
+Open the printed URL (http://127.0.0.1:8080) and press Connect. Add `?autodemo=1` to the URL to play the whole flow automatically.
+
+- Create a council of Alice, Bob and Carol with a 2 of 3 threshold.
+- Switch between Alice, Bob, Carol and Mallory (an outsider), then propose a fee change or a new stake distribution.
+- Approve and execute proposals, with approval dots and a status for each one.
+- Rejections show the program's own error, for example `ThresholdNotMet` when executing with 1 of 3 approvals, or `NotAMember` when Mallory tries to approve.
+
+The page uses throwaway keys generated in the browser, funded by airdrop on a local validator. It covers the council flow and the policy actions; taking over and managing a real stake pool is shown by the test suite above. It loads `@solana/web3.js` from a CDN, so it needs an internet connection.
+
+![StakeCouncil demo UI](app/screenshot.png)
+
 ## Accounts
 
 | Account | Seeds | Holds |
@@ -111,6 +131,8 @@ The wallet that runs the tests only pays fees. It is not a council member and ca
 | [`tests/real_stake_pool.ts`](tests/real_stake_pool.ts) | Takeover and management of a real SPL stake pool |
 | [`tests/stake_council.ts`](tests/stake_council.ts) | Council rules: thresholds, membership, validation |
 | [`tests/fixtures/`](tests/fixtures) | Stake pool program binary, pool account copies, and the script that builds them |
+| [`app/`](app) | The demo UI: a static page, no build step |
+| [`scripts/demo.sh`](scripts/demo.sh) | Starts a local validator with the program and serves the UI |
 | [`docs/claude-workspace.md`](docs/claude-workspace.md) | Notes on the Claude Code workspace this was built in |
 
 ## Status and limits

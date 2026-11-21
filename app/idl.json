@@ -1,0 +1,707 @@
+{
+  "address": "CT73htzJtWZm27tc3fvcVy1iUrDxBPWv6abkNQidHVvM",
+  "metadata": {
+    "name": "stake_council",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "2/3 council that owns a stake pool's manager authority"
+  },
+  "instructions": [
+    {
+      "name": "approve",
+      "docs": [
+        "A different council member approves an open proposal."
+      ],
+      "discriminator": [
+        69,
+        74,
+        217,
+        36,
+        115,
+        117,
+        97,
+        76
+      ],
+      "accounts": [
+        {
+          "name": "member",
+          "signer": true
+        },
+        {
+          "name": "council",
+          "relations": [
+            "proposal"
+          ]
+        },
+        {
+          "name": "proposal",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "execute",
+      "docs": [
+        "Anyone can crank execution once the approval threshold is met.",
+        "The council PDA is the pool manager, so this is the only path that can change the pool."
+      ],
+      "discriminator": [
+        130,
+        221,
+        242,
+        154,
+        13,
+        193,
+        189,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "executor",
+          "signer": true
+        },
+        {
+          "name": "council",
+          "relations": [
+            "proposal"
+          ]
+        },
+        {
+          "name": "proposal",
+          "writable": true
+        },
+        {
+          "name": "pool",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "docs": [
+        "Create a council and the stake pool config it manages."
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "council",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  117,
+                  110,
+                  99,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "council"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "members",
+          "type": {
+            "vec": "pubkey"
+          }
+        },
+        {
+          "name": "threshold",
+          "type": "u8"
+        },
+        {
+          "name": "epoch_fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "propose",
+      "docs": [
+        "A council member proposes a managerial action. The proposer's approval is counted."
+      ],
+      "discriminator": [
+        93,
+        253,
+        82,
+        168,
+        118,
+        33,
+        102,
+        90
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "proposer",
+          "signer": true
+        },
+        {
+          "name": "council",
+          "writable": true
+        },
+        {
+          "name": "proposal",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  111,
+                  115,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "council"
+              },
+              {
+                "kind": "account",
+                "path": "council.proposal_count",
+                "account": "Council"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "action",
+          "type": {
+            "defined": {
+              "name": "Action"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Council",
+      "discriminator": [
+        28,
+        184,
+        149,
+        185,
+        217,
+        59,
+        252,
+        96
+      ]
+    },
+    {
+      "name": "PoolConfig",
+      "discriminator": [
+        26,
+        108,
+        14,
+        123,
+        116,
+        230,
+        129,
+        43
+      ]
+    },
+    {
+      "name": "Proposal",
+      "discriminator": [
+        26,
+        94,
+        189,
+        187,
+        116,
+        136,
+        53,
+        33
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "CouncilCreated",
+      "discriminator": [
+        147,
+        70,
+        59,
+        33,
+        243,
+        29,
+        63,
+        116
+      ]
+    },
+    {
+      "name": "ProposalApproved",
+      "discriminator": [
+        70,
+        49,
+        155,
+        228,
+        157,
+        43,
+        88,
+        49
+      ]
+    },
+    {
+      "name": "ProposalCreated",
+      "discriminator": [
+        186,
+        8,
+        160,
+        108,
+        81,
+        13,
+        51,
+        206
+      ]
+    },
+    {
+      "name": "ProposalExecuted",
+      "discriminator": [
+        92,
+        213,
+        189,
+        201,
+        101,
+        83,
+        111,
+        83
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidMemberCount",
+      "msg": "Council needs between 1 and 10 members"
+    },
+    {
+      "code": 6001,
+      "name": "DuplicateMember",
+      "msg": "Duplicate council member"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidThreshold",
+      "msg": "Threshold must be a 2/3 supermajority and no larger than the member count"
+    },
+    {
+      "code": 6003,
+      "name": "NotAMember",
+      "msg": "Signer is not a council member"
+    },
+    {
+      "code": 6004,
+      "name": "AlreadyApproved",
+      "msg": "This member already approved the proposal"
+    },
+    {
+      "code": 6005,
+      "name": "AlreadyExecuted",
+      "msg": "Proposal was already executed"
+    },
+    {
+      "code": 6006,
+      "name": "ThresholdNotMet",
+      "msg": "Not enough approvals to execute"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidFee",
+      "msg": "Fee must be at most 10000 bps"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidDistribution",
+      "msg": "Stake distribution needs unique validators whose weights sum to 10000 bps"
+    },
+    {
+      "code": 6009,
+      "name": "WrongCouncil",
+      "msg": "Proposal belongs to a different council"
+    },
+    {
+      "code": 6010,
+      "name": "NotPoolManager",
+      "msg": "Pool is not managed by this council"
+    },
+    {
+      "code": 6011,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidInstruction",
+      "msg": "Stake pool instruction has too many accounts or an empty / oversized payload"
+    },
+    {
+      "code": 6013,
+      "name": "AccountsMismatch",
+      "msg": "Accounts passed to execute do not match the approved instruction"
+    },
+    {
+      "code": 6014,
+      "name": "NotStakePoolProgram",
+      "msg": "Council instructions can only target the SPL Stake Pool program"
+    }
+  ],
+  "types": [
+    {
+      "name": "Action",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "SetFee",
+            "fields": [
+              {
+                "name": "fee_bps",
+                "type": "u16"
+              }
+            ]
+          },
+          {
+            "name": "SetStakeDistribution",
+            "fields": [
+              {
+                "name": "allocations",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "Allocation"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "StakePoolInstruction",
+            "fields": [
+              {
+                "name": "accounts",
+                "type": {
+                  "vec": {
+                    "defined": {
+                      "name": "IxAccount"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "data",
+                "type": "bytes"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Allocation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "validator",
+            "type": "pubkey"
+          },
+          {
+            "name": "weight_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Council",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "members",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "threshold",
+            "type": "u8"
+          },
+          {
+            "name": "proposal_count",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CouncilCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "council",
+            "type": "pubkey"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "member_count",
+            "type": "u8"
+          },
+          {
+            "name": "threshold",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "IxAccount",
+      "docs": [
+        "One account of a stored stake pool instruction."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_signer",
+            "type": "bool"
+          },
+          {
+            "name": "is_writable",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolConfig",
+      "docs": [
+        "The managed stake pool settings. `manager` is the council PDA — no private key exists for it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "manager",
+            "type": "pubkey"
+          },
+          {
+            "name": "epoch_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "allocations",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Allocation"
+                }
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Proposal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "council",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "proposer",
+            "type": "pubkey"
+          },
+          {
+            "name": "action",
+            "type": {
+              "defined": {
+                "name": "Action"
+              }
+            }
+          },
+          {
+            "name": "approvals",
+            "docs": [
+              "bitmap: bit i set = council.members[i] approved"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "executed",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalApproved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal",
+            "type": "pubkey"
+          },
+          {
+            "name": "member",
+            "type": "pubkey"
+          },
+          {
+            "name": "approvals",
+            "type": "u8"
+          },
+          {
+            "name": "threshold",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "council",
+            "type": "pubkey"
+          },
+          {
+            "name": "proposal",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "proposer",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalExecuted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "executor",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}

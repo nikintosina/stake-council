@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StakeCouncil demo</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #16181d; --muted: #5d6675; --line: #dfe3ea;
+    --accent: #2f5bd8; --accent-text: #ffffff; --ok: #1d7a46; --ok-bg: #e3f4ea;
+    --warn: #8a5a00; --warn-bg: #fdf1d6; --err: #b3261e; --err-bg: #fbe6e4; --bar: #c9d6f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111318; --card: #1a1d24; --text: #e8eaee; --muted: #9aa3b2; --line: #2c313c;
+      --accent: #7c9cf5; --accent-text: #0e1220; --ok: #6fd39a; --ok-bg: #173323;
+      --warn: #f0c36a; --warn-bg: #3a2d10; --err: #ff8f86; --err-bg: #3b1a18; --bar: #2c3b66;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  p { margin: 0 0 8px; }
+  .lede { color: var(--muted); margin-bottom: 20px; max-width: 62ch; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid > .card { margin-bottom: 0; }
+  .grid { margin-bottom: 16px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+  input[type=text], input[type=number] { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 9px; min-width: 0; }
+  input[type=text] { flex: 1 1 220px; }
+  input[type=number] { width: 96px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .roles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .roles button { text-align: left; padding: 8px 12px; }
+  .roles button[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .roles .tag { display: block; font-size: 12px; color: var(--muted); }
+  .pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 12px; font-weight: 600; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.open { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .pill.err { background: var(--err-bg); color: var(--err); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .big { font-size: 28px; font-weight: 650; line-height: 1.2; }
+  .bar-row { margin-top: 8px; }
+  .bar { height: 10px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--accent); }
+  .proposal { border-top: 1px solid var(--line); padding: 12px 0; }
+  .proposal:first-child { border-top: 0; padding-top: 0; }
+  .proposal .head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
+  .dots { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+  .dot { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted); }
+  .dot i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--muted); display: inline-block; }
+  .dot.on { color: var(--text); }
+  .dot.on i { background: var(--ok); border-color: var(--ok); }
+  .log { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow: auto; }
+  .log li { padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .log li:first-child { border-top: 0; }
+  .log .err { color: var(--err); }
+  .log .ok { color: var(--ok); }
+  fieldset { border: 0; padding: 0; margin: 0 0 10px; }
+  label { display: inline-flex; align-items: center; gap: 6px; }
+  .notice { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>StakeCouncil</h1>
+  <p class="lede">A stake pool whose manager is a program address with no private key. Fees and stake distribution change only when 2 of 3 council wallets approve a proposal.</p>
+
+  <section class="card" aria-label="Connection">
+    <div class="row">
+      <input type="text" id="rpc" value="http://127.0.0.1:8899" aria-label="RPC URL" spellcheck="false">
+      <button id="connect" class="primary">Connect</button>
+      <button id="reset" title="Generate fresh demo wallets, which gives you a new council">Reset demo</button>
+    </div>
+    <p id="status" class="small muted" style="margin:10px 0 0">Not connected. Start a local validator with <code>scripts/demo.sh</code>, then press Connect.</p>
+    <p class="small muted" style="margin:6px 0 0">Demo wallets are generated in this browser and stored in local storage. Use them on a local validator only.</p>
+  </section>
+
+  <section class="card" aria-label="Acting as">
+    <h2>Acting as</h2>
+    <div class="roles" id="roles"></div>
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-label="Council">
+      <h2>Council</h2>
+      <div id="council"></div>
+    </section>
+    <section class="card" aria-label="Stake pool">
+      <h2>Stake pool</h2>
+      <div id="pool"></div>
+    </section>
+  </div>
+
+  <section class="card" aria-label="New proposal">
+    <h2>New proposal</h2>
+    <fieldset>
+      <div class="row">
+        <label><input type="radio" name="kind" value="fee" checked> Change the fee</label>
+        <label><input type="radio" name="kind" value="distribution"> Change the stake distribution</label>
+      </div>
+    </fieldset>
+    <div id="fee-form" class="row">
+      <label>New fee <input type="number" id="fee-bps" value="250" min="0" max="65535" step="1"> bps</label>
+      <span class="muted small" id="fee-hint"></span>
+    </div>
+    <div id="distribution-form" class="hidden">
+      <div class="row" id="weights"></div>
+      <p class="small muted" id="weights-hint" style="margin-top:8px"></p>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="propose" class="primary">Propose</button>
+      <span class="muted small" id="propose-hint"></span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Proposals">
+    <h2>Proposals</h2>
+    <div id="proposals"></div>
+  </section>
+
+  <section class="card" aria-label="Activity">
+    <h2>Activity</h2>
+    <ul class="log" id="log"><li class="muted">Nothing yet.</li></ul>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.0/lib/index.iife.min.js"></script>
+<script src="client.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>

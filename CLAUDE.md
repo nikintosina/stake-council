@@ -2,6 +2,10 @@
 
 Solana program(s) + TypeScript client, built with Anchor. Workspace for workshop demos and live-coding.
 
+## Current state (Nov 2026): `stake_council` runs on Anchor 0.31.1
+
+The one program in this repo, `programs/stake_council`, was built under a hard deadline on the toolchain already installed: Anchor `0.31.1` (pinned in `Anchor.toml`), Solana CLI 2.2, a single `lib.rs`, and TS mocha tests using `@coral-xyz/anchor` against `solana-test-validator` (`anchor test`). `.cargo/config.toml` and `Cargo.lock` keep dependencies buildable on the Solana 2.2 build tools. The stack, layout and test rules below describe the target for this workspace (Anchor 1.x); migrating `stake_council` to them is open work, so do not "fix" the mismatch piecemeal.
+
 ## Stack (pinned — do not drift without updating this file + Anchor.toml)
 
 - **Programs:** Rust (MSRV 1.89) · Anchor `1.x` (`anchor-lang`, `anchor-spl`) · Solana crates v3 (default `solana-v3` feature)
