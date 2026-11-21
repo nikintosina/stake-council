@@ -28,18 +28,14 @@ scripts/setup.sh                  toolchain check, hook chmod, installs solana-d
     guard-bash.sh                 PreToolUse Bash: denies secret dumps / keypair overwrite / piped installers; asks on mainnet or deploy
     format-on-edit.sh             PostToolUse: rustfmt / prettier / taplo
     post-build-check.sh           PostToolUse (anchor build): declare_id! == keypair == Anchor.toml, IDL vs client freshness
-    stop-check.sh                 Stop: nudges to build+test if programs/ changed without a build
   skills/
     new-instruction/              /new-instruction <program> <ix> — full scaffold incl. tests + client regen
-    audit/                        /audit [--diff|program] — forks the security-auditor subagent
+    audit/                        /audit [--diff|program] — security audit in a forked context
     deploy/                       /deploy <cluster> — the only sanctioned deploy path (model can't self-invoke)
     test/                         /test — run suite + Anchor error-code triage table
     cu-profile/                   /cu-profile <program> <ix> — CU measurement + optimization playbook
     solana-dev/                   (installed by setup.sh) Solana Foundation's official skill + references
   agents/
-    security-auditor.md           read-only, opus, project memory
-    anchor-reviewer.md            read-only code-quality reviewer, sonnet
-    test-engineer.md              writes tests only, sonnet, acceptEdits
     solana-docs.md                haiku doc-lookup via Solana MCP, no CLAUDE.md
 ```
 
@@ -56,7 +52,7 @@ claude
 
 **Existing project** — copy the same files into the repo root; if you already have a `.claude/settings.json`, merge the `permissions` and `hooks` blocks rather than overwriting. Then `bash scripts/setup.sh`.
 
-In the first session run `/context` (confirm CLAUDE.md + 4 rules loaded), `/mcp` (trust `solana-mcp`), and `/hooks` (see 7 hooks registered).
+In the first session run `/context` (confirm CLAUDE.md + 4 rules loaded), `/mcp` (trust `solana-mcp`), and `/hooks` (see 6 hooks registered).
 
 ## Daily flow
 
@@ -64,10 +60,9 @@ In the first session run `/context` (confirm CLAUDE.md + 4 rules loaded), `/mcp`
 |---|---|
 | `add a withdraw instruction to vault that ...` | Claude loads `anchor-programs.md`, designs accounts/constraints first, then likely invokes `/new-instruction` |
 | `/test` | runs `anchor test`, maps Anchor error codes to causes |
-| `/audit --diff` | isolated opus subagent audits changed files, returns severity-ranked report |
+| `/audit --diff` | forked context audits changed files, returns severity-ranked report |
 | `/cu-profile vault withdraw` | baseline CU → optimizations → pinned budget test |
 | `/deploy devnet` | preflight, explicit confirmation, deploy, IDL upload, post-deploy record |
-| `@agent-anchor-reviewer review my diff` | code-quality pass before PR |
 
 ## Why these specific choices
 
@@ -75,10 +70,9 @@ In the first session run `/context` (confirm CLAUDE.md + 4 rules loaded), `/mcp`
 - **Deny on `Read(…keypair.json)` *and* a Bash hook**: permission deny rules only cover Claude's file tools; `cat target/deploy/x-keypair.json` needs the hook. Both exist.
 - **`ask` instead of `deny` for deploys**: you still deploy from the session, but every deploy is a visible approval with the cluster in the prompt.
 - **`disable-model-invocation: true` on `/deploy`**: Claude can't decide to deploy because the code "looks ready"; only you can type it.
-- **`context: fork` + `agent: security-auditor` on `/audit`**: the audit runs in a clean context that hasn't seen the implementation reasoning — the work isn't grading itself.
-- **`CLAUDE_CODE_SUBAGENT_MODEL=sonnet`** default with `model: opus` pinned only on the auditor: cheap exploration, expensive judgment where it matters.
+- **`context: fork` on `/audit`**: the audit runs in a clean context that hasn't seen the implementation reasoning — the work isn't grading itself.
+- **`CLAUDE_CODE_SUBAGENT_MODEL=sonnet`** default: subagents run on Sonnet to keep exploration cheap.
 - **Path-scoped rules** instead of one giant CLAUDE.md: the TS rules never consume context while you're in Rust, and vice-versa.
-- **`stop-check.sh`** uses `stop_hook_active` so it nudges at most once per turn and can't loop.
 
 ## Customize
 

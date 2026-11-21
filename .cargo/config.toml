@@ -1,0 +1,4 @@
+# The Solana 2.2 build tools ship cargo 1.84, which cannot parse edition-2024 crates.
+# Prefer dependency versions whose declared rust-version fits the active compiler.
+[resolver]
+incompatible-rust-versions = "fallback"

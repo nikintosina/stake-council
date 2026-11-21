@@ -1,9 +1,8 @@
 ---
 name: audit
-description: Security audit of the Solana programs in this repo (or a diff / specific program) using the security-auditor subagent in an isolated context. Use after changing constraints, CPIs, token transfers, authority logic, or before any deploy.
+description: Security audit of the Solana programs in this repo (or a diff / specific program) in an isolated forked context. Use after changing constraints, CPIs, token transfers, authority logic, or before any deploy.
 argument-hint: [program-name | --diff | path/to/file.rs]
 context: fork
-agent: security-auditor
 background: false
 ---
 
